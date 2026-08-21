@@ -56,3 +56,40 @@ def assert_not_equals(result, unwanted, message: str = "Expected {result} to not
         return
     if result == unwanted:
         raise TestError(message.format(result=result, unwanted=unwanted))
+
+def assert_greater_than(a: (float | int), b: (float | int)):
+    if a <= b:
+        raise TestError(f"{a} should be greater than {b}")
+
+def assert_less_than(a: (float | int), b: (float | int)):
+    if a >= b:
+        raise TestError(f"{a} should be less than {b}")
+
+def assert_greater_than_equal(a: (float | int), b: (float | int)):
+    if a < b:
+        raise TestError(f"{a} should be greater than or equal to {b}")
+
+def assert_less_than_equal(a: (float | int), b: (float | int)):
+    if a > b:
+        raise TestError(f"{a} should be less than or equal to {b}")
+
+def assert_raises(a, args=None):
+    try:
+        if args is None:
+            a()  # Run function
+        else:
+            a(*args)  # Run function with args
+    except Exception as e:
+        return
+    raise TestError(f"{a} didn't raise an exception")
+
+def assert_not_raises(a, args=None):
+    try:
+        if args is None:
+            a()
+        else:
+            a(*args)
+    except Exception as e:
+        raise TestError(f"{a} raised an exception: {e}")
+
+
