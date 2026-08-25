@@ -24,12 +24,12 @@ class Suite:
             status, message = test.run()
             if status:
                 total_tests_passed += 1
-                print(f"{name} passed", flush=True)
+                print(f"\x1b[1;32m{name} passed", flush=True)
             else:
-                print(f"{name} failed: {message}", flush=True)
-        print(f"Tests success rate: {total_tests_passed / total_tests} at {total_tests_passed}/{total_tests}")
+                print(f"\x1b[1;31m{name} failed: {message}", flush=True)
+        print(f"\x1b[0mTests success rate: {(total_tests_passed / total_tests)} at {total_tests_passed}/{total_tests}")
         if total_tests_passed == total_tests:
-            print("All tests passed", flush=True)
+            print("\x1b[0mAll tests passed", flush=True)
         pass
 
 
