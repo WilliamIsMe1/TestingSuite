@@ -1,4 +1,5 @@
 from testing import *
+import random
 
 
 def add(x, y):
@@ -12,16 +13,56 @@ def test1_function():
 
 
 def test2_function():
-    assert_raises(add, 1, "15")
-
-def test3_function():
     assert_not_raises(add, 1, "15")
 
-test1 = UnitTest(test1_function)
-test2 = UnitTest(test2_function)
-test3 = UnitTest(test3_function)
 
-suite = Suite({"test1": test1, "test2": test2})
+def test3_function():
+    assert_not_raises(add, 1, 15)
 
-exit(suite.run_all())
 
+def test4_function():
+    total = 0
+    for i in range(1_000_000):
+        total = add(total, i)
+    assert_equals(total, sum(range(1_000_000)))
+
+
+def test5_function():
+    big1 = 10**18
+    big2 = 10**18
+    assert_equals(add(big1, big2), 2 * 10**18)
+    assert_equals(add(10**300, 10**300), 2 * 10**300)
+
+
+def test6_function():
+    random.seed(42)
+    for _ in range(1_000_000):
+        a = random.uniform(-1e6, 1e6)
+        b = random.uniform(-1e6, 1e6)
+        assert_equals(add(a, b), a + b, tolerance=1.0e-6)
+
+
+def test7_function():
+    for _ in range(500_000):
+        assert_not_raises(add, random.random(), random.random())
+
+
+test1 = UnitTest(test1_function, ["add_tests"])
+test2 = UnitTest(test2_function, ["add_tests"])
+test3 = UnitTest(test3_function, ["add_tests"])
+test4 = UnitTest(test4_function, ["add_tests", "stress_tests"])
+test5 = UnitTest(test5_function, ["add_tests", "stress_tests"])
+test6 = UnitTest(test6_function, ["add_tests", "stress_tests"])
+test7 = UnitTest(test7_function, ["add_tests", "stress_tests"])
+
+suite = Suite({
+    "test1": test1,
+    "test2": test2,
+    "test3": test3,
+    "test4": test4,
+    "test5": test5,
+    "test6": test6,
+    "test7": test7,
+})
+
+exit(suite.run_tags(["add_tests"]))
