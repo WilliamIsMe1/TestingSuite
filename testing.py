@@ -1,4 +1,6 @@
+import time
 from typing import Callable
+from time import time
 
 
 class TestError(Exception):
@@ -7,42 +9,76 @@ class TestError(Exception):
 
 
 class UnitTest:
-    def __init__(self, test_function: Callable):
+    def __init__(self, test_function: Callable, tags: list[str]):
         self.test_function = test_function
+        self.tags: list[str] = tags or []
         pass
 
-    def run(self) -> tuple[bool, str]:
+    def run(self) -> tuple[bool, str, float]:
+        start_time = time()
+
         try:
             self.test_function()
+            end_time = time()
         except TestError as e:
-            return False, e.message
-        return True, "Passed."
+            end_time = time()
+            return False, e.message, end_time - start_time
+
+        return True, "Passed.", end_time - start_time
 
 
 class Suite:
     def __init__(self, tests: dict[str, UnitTest]):
         self.tests = tests
-        pass
+        self.tags: dict[str, list[str]] = {}
+
+        for name, test in self.tests.items():
+            for tag in test.tags:
+                self.tags.setdefault(tag, []).append(name)
 
     def run_all(self) -> int:
         return self.run([name for name, test in self.tests.items()])
 
+    def run_tags(self, tags: list[str]): # Bug already exists: repeating tests
+        if len(tags) == 1:
+            print(f"Running test tag {tags[0]}", flush=True)
+        else:
+            print(f"Running test tags {', '.join(tags)}", flush=True)
+
+        tests_to_run: list[str] = []
+        for tag in tags:
+            for name in self.tags[tag]:
+                if name in tests_to_run:
+                    continue
+                tests_to_run.append(name)
+
+        self.run(tests_to_run)
+
     def run(self, tests_to_run: list[str]) -> int:
-        print(f"Running {len(tests_to_run)} tests", flush=True)
-        total_tests = 0
+        actual_test_count = 0
         total_tests_passed = 0
+        total_elapsed = 0
+
         for name, test in self.tests.items():
             if name not in tests_to_run:
                 continue
-            total_tests += 1
-            status, message = test.run()
+            actual_test_count += 1
+        print(f"Running {actual_test_count} tests", flush=True)
+
+        for name, test in self.tests.items():
+            status, message, elapsed = test.run()
+            total_elapsed += elapsed
+
             if status:
                 total_tests_passed += 1
-                print(f"\x1b[1;32m{name} passed", flush=True)
+                print(f"\x1b[1;32m{name} passed in {elapsed:.4g} seconds", flush=True)
             else:
-                print(f"\x1b[1;31m{name} failed: {message}", flush=True)
-        print(f"\x1b[0mTests success rate: {0.0 if total_tests == 0 else (total_tests_passed / total_tests)} at {total_tests_passed}/{total_tests}")
-        if total_tests_passed == total_tests:
+                print(f"\x1b[1;31m{name} failed: {message} in {elapsed:.4g} seconds", flush=True)
+
+        print(f"\x1b[0mTests success rate: {0 if actual_test_count == 0 else int((total_tests_passed / actual_test_count)*100)}% at {total_tests_passed}/{actual_test_count}")
+        print(f"\x1b[0mTotal elapsed time: {total_elapsed:.4g} seconds")
+
+        if total_tests_passed == actual_test_count:
             print("\x1b[0mAll tests passed", flush=True)
             return 0
         return 1
@@ -53,6 +89,7 @@ def assert_equals(a, b, message: str = "Expected {a}, but got {b}", tolerance: f
         if abs(a - b) > tolerance:
             raise TestError(message.format(a=a, b=b))
         return
+    
     if not (a == b):
         raise TestError(message.format(a=a, b=b))
 
@@ -62,6 +99,7 @@ def assert_not_equals(result, unwanted, message: str = "Expected {result} to not
         if abs(result - unwanted) <= tolerance:
             raise TestError(message.format(result=result, unwanted=unwanted))
         return
+
     if result == unwanted:
         raise TestError(message.format(result=result, unwanted=unwanted))
 
