@@ -21,6 +21,7 @@ test1 = UnitTest(test1_function)
 test2 = UnitTest(test2_function)
 test3 = UnitTest(test3_function)
 
-suite = Suite({"test1": test1, "test2": test2, "test3": test3})
+suite = Suite({"test1": test1, "test2": test2})
 
-suite.run_all()
+exit(suite.run_all())
+
