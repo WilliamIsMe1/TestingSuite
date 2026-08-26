@@ -1,4 +1,3 @@
-import time
 from typing import Callable
 from time import time
 
@@ -34,12 +33,14 @@ class Suite:
 
         for name, test in self.tests.items():
             for tag in test.tags:
-                self.tags.setdefault(tag, []).append(name)
+                tag_list = self.tags.setdefault(tag, [])
+                if name not in tag_list:
+                    tag_list.append(name)
 
     def run_all(self) -> int:
         return self.run([name for name, test in self.tests.items()])
 
-    def run_tags(self, tags: list[str]): # Bug already exists: repeating tests
+    def run_tags(self, tags: list[str]) -> int: # Bug already exists: repeating tests
         if len(tags) == 1:
             print(f"Running test tag {tags[0]}", flush=True)
         else:
@@ -52,7 +53,7 @@ class Suite:
                     continue
                 tests_to_run.append(name)
 
-        self.run(tests_to_run)
+        return self.run(tests_to_run)
 
     def run(self, tests_to_run: list[str]) -> int:
         actual_test_count = 0
@@ -68,6 +69,8 @@ class Suite:
         for name, test in self.tests.items():
             status, message, elapsed = test.run()
             total_elapsed += elapsed
+            if name not in tests_to_run:
+                continue
 
             if status:
                 total_tests_passed += 1
@@ -89,7 +92,7 @@ def assert_equals(a, b, message: str = "Expected {a}, but got {b}", tolerance: f
         if abs(a - b) > tolerance:
             raise TestError(message.format(a=a, b=b))
         return
-    
+
     if not (a == b):
         raise TestError(message.format(a=a, b=b))
 

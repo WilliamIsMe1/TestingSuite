@@ -65,4 +65,4 @@ suite = Suite({
     "test7": test7,
 })
 
-exit(suite.run_tags(["add_tests"]))
+exit(suite.run_tags(["stress_tests"]))
