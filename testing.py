@@ -97,7 +97,7 @@ class Suite:
         print(f"{reset}Total elapsed time: {total_elapsed:.4g} seconds")
 
         if total_tests_passed == test_count:
-            print("\x1b[0mAll tests passed", flush=True)
+            print(f"{reset}All tests passed", flush=True)
             return 0
         return 1
 
@@ -155,3 +155,14 @@ def assert_not_raises(a: Callable, *args):
         a(*args)
     except Exception as e:
         raise TestError(f"{a} raised an exception: {e}")
+
+
+import importlib
+
+
+# TODO Learn importlib
+def import_tests(module_name: str) -> dict[str, UnitTest]:
+    module = importlib.import_module(module_name)
+
+
+    pass
