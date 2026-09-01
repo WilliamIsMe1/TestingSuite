@@ -1,5 +1,6 @@
 from typing import Callable
 from time import time
+from os import get_terminal_size
 
 
 class TestError(Exception):
@@ -56,16 +57,24 @@ class Suite:
         return self.run(tests_to_run)
 
     def run(self, tests_to_run: list[str]) -> int:
-        actual_test_count = 0
+        red = "\x1b[31m"
+        green = "\x1b[32m"
+        reset = "\x1b[0m"
+        bold = "\x1b[1m"
+        test_count = 0
         total_tests_passed = 0
         total_elapsed = 0
 
         for name, test in self.tests.items():
             if name not in tests_to_run:
                 continue
-            actual_test_count += 1
-        print(f"Running {actual_test_count} tests", flush=True)
+            test_count += 1
+        if test_count == 0:
+            print(f"{bold}{red}Cannot run zero tests!", flush=True)
+            return 1
+        print(f"Running {test_count} tests", flush=True)
 
+        test_number = 0
         for name, test in self.tests.items():
             status, message, elapsed = test.run()
             total_elapsed += elapsed
@@ -74,14 +83,20 @@ class Suite:
 
             if status:
                 total_tests_passed += 1
-                print(f"\x1b[1;32m{name} passed in {elapsed:.4g} seconds", flush=True)
+                print(f"{reset}[{int(100*test_number/test_count)}%] {bold}{green}{name} passed in {elapsed:.4g} seconds", flush=True)
             else:
-                print(f"\x1b[1;31m{name} failed: {message} in {elapsed:.4g} seconds", flush=True)
+                print(f"{reset}[{int(100*test_number/test_count)}%] {bold}{red}{name} failed: {message} in {elapsed:.4g} seconds", flush=True)
+            test_number += 1
+        terminal_size = 120
+        try:
+            terminal_size = get_terminal_size().columns
+        except OSError:
+            pass
+        print(reset + "-" * terminal_size)
+        print(f"{reset}[{int(100*test_number/test_count)}%] Tests success rate: {int((total_tests_passed / test_count)*100)}% at {total_tests_passed}/{test_count}")
+        print(f"{reset}Total elapsed time: {total_elapsed:.4g} seconds")
 
-        print(f"\x1b[0mTests success rate: {0 if actual_test_count == 0 else int((total_tests_passed / actual_test_count)*100)}% at {total_tests_passed}/{actual_test_count}")
-        print(f"\x1b[0mTotal elapsed time: {total_elapsed:.4g} seconds")
-
-        if total_tests_passed == actual_test_count:
+        if total_tests_passed == test_count:
             print("\x1b[0mAll tests passed", flush=True)
             return 0
         return 1
