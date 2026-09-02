@@ -1,6 +1,8 @@
 from typing import Callable
 from time import time
 from os import get_terminal_size
+from inspect import isfunction, getmembers
+import importlib
 
 
 class TestError(Exception):
@@ -32,14 +34,14 @@ class Suite:
         self.tests = tests
         self.tags: dict[str, list[str]] = {}
 
-        for name, test in self.tests.items():
-            for tag in test.tags:
+        for name, unit_test in self.tests.items():
+            for tag in unit_test.tags:
                 tag_list = self.tags.setdefault(tag, [])
                 if name not in tag_list:
                     tag_list.append(name)
 
     def run_all(self) -> int:
-        return self.run([name for name, test in self.tests.items()])
+        return self.run([name for name, unit_test in self.tests.items()])
 
     def run_tags(self, tags: list[str]) -> int: # Bug already exists: repeating tests
         if len(tags) == 1:
@@ -65,7 +67,7 @@ class Suite:
         total_tests_passed = 0
         total_elapsed = 0
 
-        for name, test in self.tests.items():
+        for name, unit_test in self.tests.items():
             if name not in tests_to_run:
                 continue
             test_count += 1
@@ -75,8 +77,8 @@ class Suite:
         print(f"Running {test_count} tests", flush=True)
 
         test_number = 0
-        for name, test in self.tests.items():
-            status, message, elapsed = test.run()
+        for name, unit_test in self.tests.items():
+            status, message, elapsed = unit_test.run()
             total_elapsed += elapsed
             if name not in tests_to_run:
                 continue
@@ -157,12 +159,26 @@ def assert_not_raises(a: Callable, *args):
         raise TestError(f"{a} raised an exception: {e}")
 
 
-import importlib
+def test(tags: list[str]):
+    def test_decorator(func):
+        def wrapper():
+            func()
+        wrapper.is_test = True
+        wrapper.tags = tags
+        wrapper.__name__ = func.__name__
+        return wrapper
+    return test_decorator
 
 
-# TODO Learn importlib
 def import_tests(module_name: str) -> dict[str, UnitTest]:
-    module = importlib.import_module(module_name)
+    reset = "\x1b[0m"
+    print(f"{reset}Importing tests from {module_name}")
+    mod = importlib.import_module(module_name)
+    functions = getmembers(mod, isfunction)
 
+    tests: dict[str, UnitTest] = {}
+    for name, f in functions:
+        if getattr(f, "is_test", False):
+            tests[name] = UnitTest(f, getattr(f, "tags", []))
 
-    pass
+    return tests
