@@ -52,7 +52,7 @@ def test7_function():
     for _ in range(500_000):
         assert_not_raises(add, random.random(), random.random())
 
-
+# # You can do it this way :D
 # test1 = UnitTest(test1_function, ["add_tests"])
 # test2 = UnitTest(test2_function, ["add_tests"])
 # test3 = UnitTest(test3_function, ["add_tests"])
